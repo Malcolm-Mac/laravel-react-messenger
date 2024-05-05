@@ -1,0 +1,57 @@
+version: '4.28.0'
+
+networks:
+  laravel-react-messenger:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
+
+services:
+  app:
+    build:
+      args:
+        user: laravel-react-messenger
+        uid: 1000
+      context: ./.docker/app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+      - ./.docker/app/php.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - laravel-react-messenger
+
+  laravel-react-messenger-web:
+    image: nginx
+    container_name: laravel-react-messenger-web
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    networks:
+      - laravel-react-messenger
+    volumes:
+      - ./:/var/www
+      - ./.docker/nginx:/etc/nginx/conf.d
+
+  laravel-react-messenger-db:
+    networks:
+      - laravel-react-messenger
+    image: mysql:8.3.0
+    container_name: laravel-react-messenger-db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3309:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+
+
